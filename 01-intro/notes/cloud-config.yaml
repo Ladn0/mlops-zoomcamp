@@ -1,0 +1,32 @@
+#cloud-config
+
+# Create a group
+groups:
+  - hashicorp
+
+# Create users, in addition to the users provided by default
+users:
+  - default
+  - name: terraform
+    gecos: terraform
+    shell: /bin/bash
+    primary_group: hashicorp
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: users, admin
+    lock_passwd: false
+    ssh_authorized_keys:
+      - "ssh-rsa ..." # Replace with your public key
+
+runcmd:
+  - sudo apt-get update
+  - wget https://repo.anaconda.com/archive/Anaconda3-2022.05-Linux-x86_64.sh -O /tmp/anaconda.sh
+  - bash /tmp/anaconda.sh -b -p /home/terraform/anaconda3
+  - sudo apt-get install -y docker.io
+  - mkdir -p /home/terraform/soft
+  - wget https://github.com/docker/compose/releases/download/v2.36.0/docker-compose-linux-x86_64 -O /home/terraform/soft/docker-compose
+  - chmod +x /home/terraform/soft/docker-compose
+  - echo 'export PATH="/home/terraform/soft:${PATH}"' >> /home/terraform/.bashrc
+  - chown -R terraform:terraform /home/terraform
+  - groupadd docker || true
+  - usermod -aG docker terraform
+  - runuser -l terraform -c "/home/terraform/anaconda3/bin/conda init"
